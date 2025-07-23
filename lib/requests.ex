@@ -1,0 +1,69 @@
+defmodule RelyantApi.Requests do
+  @base_api_url "http://localhost:8000"
+  @client_id System.get_env("COMPANY_A_API_CLIENT_ID")
+  @client_secret System.get_env("COMPANY_A_API_CLIENT_SECRET")
+
+  @doc """
+  Returns the base API URL.
+  """
+  def base_api_url do
+    @base_api_url
+  end
+  
+  @doc """
+  Executes an API request.
+
+  ## Parameters
+  - url: The API endpoint URL.
+  - method: The HTTP method (:get, :post, :put).
+  - headers: Optional headers for the request.
+  - data: Optional data for POST/PUT requests.
+
+  ## Returns
+  - {:ok, response} on success
+  - {:error, reason} on failure
+  """
+  def execute_api_request(url, method, headers \\ [], data \\ %{}) do
+    headers = [{"Content-Type", "application/json"} | headers]
+
+    options =
+      case method do
+        :get -> []
+        # returns a keywords list as optional argument for the request
+        :post -> Jason.encode!(data)
+        :put -> Jason.encode!(data)
+      end
+
+    case HTTPoison.request(method, url, options, headers) do
+      {:ok, %HTTPoison.Response{status_code: code, body: body}} when code in 200..299 ->
+        {:ok, Jason.decode!(body)}
+
+      {:ok, %HTTPoison.Response{status_code: code, body: body}} ->
+        {:error, {code, Jason.decode!(body)}}
+
+      {:error, %HTTPoison.Error{reason: reason}} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Retrieves an access token from Relyant.
+  """
+  def get_relyant_access_token(client_id \\ nil, client_secret \\ nil) do
+    url = "https://relyant.us.auth0.com/oauth/token"
+    headers = [{"Content-Type", "application/json"}]
+    data = %{
+      "grant_type" => "client_credentials",
+      "audience" => "https://relyant.ai/api/v1",
+      "client_id" => client_id || @client_id,
+      "client_secret" => client_secret || @client_secret
+    }
+
+    # IO.puts("Requesting access token with client_id: #{@client_id}")
+    # IO.puts(inspect(execute_api_request(url, :post, headers, data)))
+    case execute_api_request(url, :post, headers, data) do
+      {:ok, %{"access_token" => token}} -> token
+      _ -> nil
+    end
+  end
+end
