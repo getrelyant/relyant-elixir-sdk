@@ -3,7 +3,7 @@ defmodule RelyantApi do
   Documentation for `RelyantApi SDK`.
   """
   import RelyantApi.Requests
-  
+
   @doc """
   Hello world.
 
@@ -23,7 +23,7 @@ defmodule RelyantApi do
   """
   def create_relyant_company_user(user_id, email \\ nil) do
     access_token = RelyantApi.Requests.get_relyant_access_token()
-    url = RelyantApi.Requests.base_api_url() <> "/api/v1/company-users"
+    url = RelyantApi.Requests.base_api_url() <> "/api/v1/users/company-users"
     headers = [
       {"Authorization", "Bearer #{access_token}"},
       {"Content-Type", "application/json"}
@@ -41,7 +41,7 @@ defmodule RelyantApi do
   """
   def get_relyant_company_user(user_id) do
     access_token = RelyantApi.Requests.get_relyant_access_token()
-    url = RelyantApi.Requests.base_api_url() <> "/api/v1/company-users"
+    url = RelyantApi.Requests.base_api_url() <> "/api/v1/users/company-users"
     headers = [
       {"Authorization", "Bearer #{access_token}"},
       {"X-User-ID", user_id}
