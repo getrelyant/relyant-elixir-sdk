@@ -1,6 +1,7 @@
 # RelyantApi
 
-Elixir SDK to communicate with the Relyant API
+Elixir SDK to communicate with the Relyant API. Install Elixir and Erlang to use this integration.
+Take the versions in the .tool-versions file.
 
 ## Run IEX Session
 

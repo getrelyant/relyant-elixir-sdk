@@ -9,7 +9,7 @@ defmodule RelyantApi.Requests do
   def base_api_url do
     @base_api_url
   end
-  
+
   @doc """
   Executes an API request.
 
@@ -58,9 +58,6 @@ defmodule RelyantApi.Requests do
       "client_id" => client_id || @client_id,
       "client_secret" => client_secret || @client_secret
     }
-
-    # IO.puts("Requesting access token with client_id: #{@client_id}")
-    # IO.puts(inspect(execute_api_request(url, :post, headers, data)))
     case execute_api_request(url, :post, headers, data) do
       {:ok, %{"access_token" => token}} -> token
       _ -> nil
