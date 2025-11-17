@@ -1,20 +1,20 @@
 defmodule RelyantApi.Requests do
   @base_api_url "http://localhost:8000"
-  # @base_api_url "https://dev.api.relyant.ai"
 
   @doc """
   Returns the base API URL.
   """
   def base_api_url do
-    @base_api_url
+    # Considerin the elixir integration folder, how can I package the code so that it can be imported
+    System.get_env("RELYANT_BASE_API_URL") || @base_api_url
   end
 
   defp client_id do
-    System.get_env("COMPANY_A_API_CLIENT_ID")
+    System.get_env("RELYANT_API_CLIENT_ID")
   end
 
   defp client_secret do
-    System.get_env("COMPANY_A_API_CLIENT_SECRET")
+    System.get_env("RELYANT_API_CLIENT_SECRET")
   end
 
   @doc """
