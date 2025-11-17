@@ -11,6 +11,18 @@ Take the versions in the .tool-versions file.
 
 `mix test`
 
+You can run tests on a specific file in Elixir using:
+
+`mix test test/query_test.exs`
+
+Or to run a specific test within that file, you can specify the line number:
+
+`mix test test/query_test.exs:11`
+
+You can also use pattern matching to run tests with specific names:
+
+`mix test --only test:"llm_query/2 returns a response"`
+
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed

@@ -1,8 +1,4 @@
 defmodule RelyantApi do
-  @moduledoc """
-  Documentation for `RelyantApi SDK`.
-  """
-  import RelyantApi.Requests
 
   @doc """
   Hello world.
