@@ -20,12 +20,12 @@ defmodule RelyantApiTest do
 
   test "create_relyant_client_user/2 creates a user" do
     # with_mock RelyantApi, [execute_api_request: fn _, _, _, _ -> {:ok, %{"users" => [%{"id" => "user1"}]}} end] do
-    assert Map.take(RelyantApi.create_relyant_company_user(@user_id, @email), ["company_user_id"]) == %{"company_user_id" => @user_id}
+    assert Map.take(RelyantApi.create_relyant_company_user(@user_id, @email), ["client_user_id"]) == %{"client_user_id" => @user_id}
     # end
   end
 
   test "get_relyant_client_user/1 retrieves a user" do
-    assert Map.take(RelyantApi.get_relyant_company_user(@user_id), ["company_user_id", "email", "first_name"]) == %{"company_user_id" => @user_id, "email" => @email, "first_name" => nil}
+    assert Map.take(RelyantApi.get_relyant_company_user(@user_id), ["client_user_id", "email", "first_name"]) == %{"client_user_id" => @user_id, "email" => @email, "first_name" => nil}
   end
 
   test "upload_document/4 uploads a document" do
