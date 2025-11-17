@@ -1,5 +1,6 @@
 defmodule RelyantApi.Requests do
   @base_api_url "http://localhost:8000"
+  # @base_api_url "https://dev.api.relyant.ai"
 
   @doc """
   Returns the base API URL.
