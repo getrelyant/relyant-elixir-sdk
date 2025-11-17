@@ -19,9 +19,9 @@ defmodule RelyantApi do
 
 
   @doc """
-  Creates a company user in Relyant.
+  Creates a client user in Relyant.
   """
-  def create_relyant_company_user(user_id, email \\ nil) do
+  def create_relyant_client_user(user_id, email \\ nil) do
     access_token = RelyantApi.Requests.get_relyant_access_token()
     url = RelyantApi.Requests.base_api_url() <> "/api/v1/users/company-users"
     headers = [
@@ -37,9 +37,9 @@ defmodule RelyantApi do
   end
 
   @doc """
-  Retrieves a company user from Relyant.
+  Retrieves a client user from Relyant.
   """
-  def get_relyant_company_user(user_id) do
+  def get_relyant_client_user(user_id) do
     access_token = RelyantApi.Requests.get_relyant_access_token()
     url = RelyantApi.Requests.base_api_url() <> "/api/v1/users/company-users"
     headers = [
