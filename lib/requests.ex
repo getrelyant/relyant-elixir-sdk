@@ -5,7 +5,6 @@ defmodule RelyantApi.Requests do
   Returns the base API URL.
   """
   def base_api_url do
-    # Considerin the elixir integration folder, how can I package the code so that it can be imported
     System.get_env("RELYANT_BASE_API_URL") || @base_api_url
   end
 

@@ -1,18 +1,41 @@
 # RelyantApi
 
-Elixir SDK to communicate with the Relyant API. Install Elixir and Erlang to use this integration.
-Take the versions in the .tool-versions file.
+Elixir SDK to communicate with the Relyant API.
 
-## Integration
-In order to integrate the Elixir Relyant SDK, just install the package using:
+## Installation
+
+Add `relyant_api` to your list of dependencies in `mix.exs`:
+
+```elixir
+def deps do
+  [
+    {:relyant_api, git: "https://github.com/getrelyant/relyant-api.git", sparse: "relyant_api/integrations/elixir", tag: "v0.1.0"}
+  ]
+end
 ```
 
+**For private repository access**, use SSH:
+
+```elixir
+def deps do
+  [
+    {:relyant_api, git: "git@github.com:getrelyant/relyant-api.git", sparse: "relyant_api/integrations/elixir", tag: "elixir-v0.1.0"}
+  ]
+end
 ```
 
-And then make sure to set the following environment variables in your application:
-- RELYANT_BASE_API_URL
-- RELYANT_API_CLIENT_ID
-- RELYANT_API_CLIENT_SECRET
+Then run:
+
+```bash
+mix deps.get
+```
+
+## Configuration
+
+Make sure to set the following environment variables in your application:
+- `RELYANT_BASE_API_URL` - The base URL for the Relyant API
+- `RELYANT_API_CLIENT_ID` - Your Relyant API client ID
+- `RELYANT_API_CLIENT_SECRET` - Your Relyant API client secret
 
 ## Run IEX Session
 
@@ -34,19 +57,14 @@ You can also use pattern matching to run tests with specific names:
 
 `mix test --only test:"llm_query/2 returns a response"`
 
-## Installation
+## Development
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `relyant_api` to your list of dependencies in `mix.exs`:
+For local development, install Elixir and Erlang using the versions specified in the `.tool-versions` file.
 
-```elixir
-def deps do
-  [
-    {:relyant_api, "~> 0.1.0"}
-  ]
-end
+## Documentation
+
+Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc):
+
+```bash
+mix docs
 ```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/relyant_api>.

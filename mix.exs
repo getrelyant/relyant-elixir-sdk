@@ -1,10 +1,12 @@
 defmodule RelyantApi.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+
   def project do
     [
       app: :relyant_api,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       deps: deps()
@@ -23,8 +25,6 @@ defmodule RelyantApi.MixProject do
     [
       {:httpoison, "~> 1.8"},
       {:jason, "~> 1.2"}
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
     ]
   end
 end
