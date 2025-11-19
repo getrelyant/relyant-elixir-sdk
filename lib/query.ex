@@ -17,7 +17,11 @@ defmodule RelyantApi.Query do
       - content: Direct document content
 
   ## Returns
-  - The query response on success
+  - The query response on success, which includes:
+    - query: the original query string
+    - result: an object containing:
+      - role: the role of the responder (e.g., "assistant")
+      - content: the answer content
   - nil on failure
 
   ## Examples

@@ -64,9 +64,10 @@ defmodule RelyantApi.Requests do
       "client_id" => client_id_param || client_id(),
       "client_secret" => client_secret_param || client_secret()
     }
-    case execute_api_request(url, :post, headers, data) do
+    response = execute_api_request(url, :post, headers, data)
+    case response do
       {:ok, %{"access_token" => token}} -> token
-      _ -> nil
+      _ -> response
     end
   end
 end
