@@ -17,17 +17,14 @@ defmodule RelyantApi.Query do
       - content: Direct document content
 
   ## Returns
-  - The query response on success, which includes:
+  - `{:ok, response}` on success, where response includes:
     - query: the original query string
     - result: an object containing:
       - role: the role of the responder (e.g., "assistant")
       - content: the answer content
-  - nil on failure
+  - `{:error, reason}` on failure
 
   ## Examples
-
-      # Query without documents (general knowledge)
-      RelyantApi.Query.llm_query("What is the capital of France?", user_id: "user123")
 
       # Query with documents
       documents = [
@@ -49,23 +46,34 @@ defmodule RelyantApi.Query do
     email = Keyword.get(opts, :email)
     documents = Keyword.get(opts, :documents, [])
 
-    access_token = RelyantApi.Requests.get_relyant_access_token()
+    # Get and validate access token
+    with token when is_binary(token) <- RelyantApi.Requests.get_relyant_access_token() do
 
-    url = RelyantApi.Requests.base_api_url() <> "/api/v1/query"
-    headers = [
-      {"Authorization", "Bearer #{access_token}"},
-      {"Content-Type", "application/json"},
-      {"X-User-ID", user_id},
-      {"X-User-Email", email}
-    ]
-    data = %{
-      "documents" => documents,
-      "query" => query
-    }
+      url = RelyantApi.Requests.base_api_url() <> "/api/v1/query"
+      headers = [
+        {"Authorization", "Bearer #{token}"},
+        {"Content-Type", "application/json"},
+        {"X-User-ID", user_id},
+        {"X-User-Email", email}
+      ]
+      data = %{
+        "documents" => documents,
+        "query" => query
+      }
 
-    case RelyantApi.Requests.execute_api_request(url, :post, headers, data) do
-      {:ok, response} -> response
-      _ -> nil
+      case RelyantApi.Requests.execute_api_request(url, :post, headers, data) do
+        {:ok, response} ->
+          {:ok, response}
+
+          other ->
+          {:error, other}
+      end
+    else
+      nil ->
+        {:error, {:missing_credentials, "RELYANT_API_CLIENT_ID or RELYANT_API_CLIENT_SECRET environment variables are not set"}}
+
+      other ->
+        {:error, {:authentication_failed, other}}
     end
   end
 end
