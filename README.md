@@ -1,6 +1,6 @@
-# RelyantApi
+# RelyantApi Elixir SDK
 
-Elixir SDK to communicate with the Relyant API.
+Elixir SDK to communicate with the Relyant API. We are using this public repository to host the Relyant SDK based on the up to date documentation in api.relyant.ai/docs.
 
 ## Installation
 
@@ -9,17 +9,7 @@ Add `relyant_api` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:relyant_api, git: "https://github.com/getrelyant/relyant-api.git", sparse: "relyant_api/integrations/elixir", tag: "v0.1.0"}
-  ]
-end
-```
-
-**For private repository access**, use SSH:
-
-```elixir
-def deps do
-  [
-    {:relyant_api, git: "git@github.com:getrelyant/relyant-api.git", sparse: "relyant_api/integrations/elixir", tag: "elixir-v0.1.0"}
+    {:relyant_api, git: "https://github.com/getrelyant/relyant-elixir-sdk.git"}
   ]
 end
 ```
