@@ -11,7 +11,7 @@ defmodule RelyantApi.QueryTest do
 
   test "llm_query/2 returns a response for a simple query without documents" do
     query = "What is the result of 2 + 2? Answer with just the number."
-    response = RelyantApi.Query.llm_query(query, user_id: @user_id, email: @email)
+    {:ok, response} = RelyantApi.Query.llm_query(query, user_id: @user_id, email: @email)
 
     # Assert that the response is not nil
     assert response != nil
@@ -22,7 +22,7 @@ defmodule RelyantApi.QueryTest do
 
   test "llm_query/3 returns a response for a query with empty documents list" do
     query = "What is the capital of France?"
-    response = RelyantApi.Query.llm_query(query, user_id: @user_id, documents: [])
+    {:ok, response} = RelyantApi.Query.llm_query(query, user_id: @user_id, documents: [])
     assert response != nil
   end
 
@@ -43,7 +43,7 @@ defmodule RelyantApi.QueryTest do
       }
     ]
     query = "Please summarize the document"
-    response = RelyantApi.Query.llm_query(query, user_id: @user_id, documents: documents)
+    {:ok, response} = RelyantApi.Query.llm_query(query, user_id: @user_id, documents: documents)
 
     # Assert that the response is not nil
     assert response != nil

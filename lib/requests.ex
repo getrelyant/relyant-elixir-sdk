@@ -40,7 +40,7 @@ defmodule RelyantApi.Requests do
         :put -> Jason.encode!(data)
       end
 
-    case HTTPoison.request(method, url, options, headers) do
+    case HTTPoison.request(method, url, options, headers, [recv_timeout: 30_000, timeout: 10_000]) do
       {:ok, %HTTPoison.Response{status_code: code, body: body}} when code in 200..299 ->
         {:ok, Jason.decode!(body)}
 
