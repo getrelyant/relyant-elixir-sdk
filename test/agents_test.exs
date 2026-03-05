@@ -1,0 +1,188 @@
+defmodule RelyantApi.AgentsTest do
+  use ExUnit.Case
+  doctest RelyantApi.Agents
+
+  # Make sure this user ID exists in your Relyant setup for testing
+  @user_id "test_user_id_elixir_agents"
+  @email "test_elixir_integration_agents@example.com"
+  @agent_name "Test Agent Elixir"
+  @agent_description "A test agent for automated testing"
+  @model "gpt-4o-mini"
+
+  @tools [
+    %{
+      "api_call" => %{
+        "name" => "get_employee_data",
+        "description" => "Retrieve the employee data from the company's database",
+        "endpoint" => "https://jsonplaceholder.typicode.com/users",
+        "method" => "GET",
+        "params" => %{},
+        "headers" => %{}
+      }
+    },
+    %{
+      "api_call" => %{
+        "name" => "get_posts",
+        "description" => "Retrieve posts from the company's database",
+        "endpoint" => "https://jsonplaceholder.typicode.com/posts",
+        "method" => "GET",
+        "params" => %{
+          "type" => "object",
+          "description" => "Query parameters for retrieving posts",
+          "properties" => %{
+            "userId" => %{
+              "type" => "string",
+              "description" => "The ID of the user to retrieve posts for"
+            }
+          }
+        },
+        "headers" => %{}
+      }
+    }
+  ]
+
+  setup_all do
+    :ok
+  end
+
+  setup do
+    # Register cleanup function to run after each test
+    on_exit(fn ->
+      cleanup_test_agents()
+    end)
+
+    :ok
+  end
+
+  # Helper function to cleanup all test agents after tests complete
+  defp cleanup_test_agents do
+    case RelyantApi.Agents.get_agents(user_id: @user_id, email: @email) do
+      {:ok, %{"items" => agents}} when is_list(agents) ->
+        Enum.each(agents, fn agent ->
+          agent_name = agent["name"] || ""
+          if String.contains?(agent_name, [@agent_name, "Test Agent", "CRUD", "Update", "Delete"]) do
+            RelyantApi.Agents.delete_agent(agent["id"], user_id: @user_id, email: @email)
+          end
+        end)
+      _ -> :ok
+    end
+  end
+
+  describe "create_agent/5" do
+    test "creates an agent with required parameters" do
+      {:ok, response} = RelyantApi.Agents.create_agent(
+        @agent_name,
+        @agent_description,
+        @model,
+        @tools,
+        user_id: @user_id,
+        email: @email
+      )
+
+      # Assert that the response is not nil
+      assert response != nil
+      assert is_list(response)
+      response = List.first(response)
+
+      # Assert that the response contains expected keys
+      assert Map.has_key?(response, "id")
+      assert Map.has_key?(response, "name")
+      assert Map.has_key?(response, "description")
+      assert Map.has_key?(response, "model")
+      assert Map.has_key?(response, "tools")
+
+      # Assert values match input
+      assert response["name"] == @agent_name
+      assert response["description"] == @agent_description
+      assert response["model"] == @model
+      assert is_list(response["tools"])
+      assert length(response["tools"]) == 2
+    end
+  end
+
+  describe "update_agent/2" do
+    test "updates agent name and description" do
+      # First create an agent
+      {:ok, created_agent} = RelyantApi.Agents.create_agent(
+        @agent_name <> " Update Test",
+        @agent_description,
+        @model,
+        @tools,
+        user_id: @user_id,
+        email: @email
+      )
+      assert is_list(created_agent)
+      created_agent = List.first(created_agent)
+
+      # Update the agent
+      new_name = "Updated Agent Name"
+      new_description = "Updated agent description"
+
+      {:ok, updated_agent} = RelyantApi.Agents.update_agent(
+        created_agent["id"],
+        user_id: @user_id,
+        email: @email,
+        name: new_name,
+        description: new_description
+      )
+
+      assert updated_agent != nil
+      assert updated_agent["name"] == new_name
+      assert updated_agent["description"] == new_description
+      assert updated_agent["id"] == created_agent["id"]
+    end
+  end
+
+  describe "full CRUD workflow" do
+    test "creates, reads, updates, and deletes an agent" do
+      # Create
+      {:ok, created_agent} = RelyantApi.Agents.create_agent(
+        @agent_name <> " CRUD Test",
+        @agent_description,
+        @model,
+        @tools,
+        user_id: @user_id,
+        email: @email,
+        user_prompt: "Initial prompt"
+      )
+      assert is_list(created_agent)
+      created_agent = List.first(created_agent)
+
+      assert created_agent["name"] == @agent_name <> " CRUD Test"
+      agent_id = created_agent["id"]
+
+      # Read
+      case RelyantApi.Agents.get_agents(user_id: @user_id, email: @email) do
+      {:ok, %{"items" => agents}} when is_list(agents) ->
+          found_agent = Enum.find(agents, fn agent -> agent["id"] == agent_id end)
+          assert found_agent != nil
+          assert found_agent["name"] == @agent_name <> " CRUD Test"
+      end
+      # Update
+      {:ok, updated_agent} = RelyantApi.Agents.update_agent(
+        agent_id,
+        user_id: @user_id,
+        email: @email,
+        name: "Updated CRUD Agent",
+        user_prompt: "Updated prompt"
+      )
+
+      assert updated_agent["name"] == "Updated CRUD Agent"
+      assert updated_agent["user_prompt"] == "Updated prompt"
+
+      # Delete
+      {:ok, _delete_response} = RelyantApi.Agents.delete_agent(
+        agent_id,
+        user_id: @user_id,
+        email: @email
+      )
+
+      # Verify deletion
+      case RelyantApi.Agents.get_agents(user_id: @user_id, email: @email) do
+      {:ok, %{"items" => agents}} when is_list(agents) ->
+        agent_ids = Enum.map(agents, fn agent -> agent["id"] end)
+        refute agent_id in agent_ids
+      end
+    end
+  end
+end
