@@ -68,6 +68,18 @@ defmodule RelyantApi.AgentsTest do
     end
   end
 
+  # Helper function to parse SSE (Server-Sent Events) stream
+  defp parse_sse_stream(stream_body) do
+    stream_body
+    |> String.split("\n\n")
+    |> Enum.filter(&String.starts_with?(&1, "data: "))
+    |> Enum.map(fn "data: " <> json_str ->
+      String.trim(json_str)
+      |> Jason.decode!()
+    end)
+    |> Enum.filter(fn msg -> msg != %{} end)
+  end
+
   describe "create_agent/5" do
     test "creates an agent with required parameters" do
       {:ok, response} = RelyantApi.Agents.create_agent(
@@ -130,6 +142,107 @@ defmodule RelyantApi.AgentsTest do
       assert updated_agent["name"] == new_name
       assert updated_agent["description"] == new_description
       assert updated_agent["id"] == created_agent["id"]
+    end
+  end
+
+  describe "call_agent_stream/2" do
+    test "calls an agent with streaming and receives a response" do
+      # First create an agent
+      {:ok, created_agent} = RelyantApi.Agents.create_agent(
+        @agent_name <> " Call Test",
+        @agent_description,
+        @model,
+        @tools,
+        user_id: @user_id,
+        email: @email,
+        user_prompt: "Tell me a fun fact about space"
+      )
+      assert is_list(created_agent)
+      created_agent = List.first(created_agent)
+
+      {:ok, response} = RelyantApi.Agents.call_agent_stream(
+        created_agent,
+        user_id: @user_id,
+        email: @email
+      )
+
+      # Assert response exists and is a string (SSE stream)
+      assert is_binary(response)
+      assert response != nil
+
+      # Parse the SSE stream
+      messages = parse_sse_stream(response)
+
+      # Assert we got messages from the stream
+      assert length(messages) > 0
+
+      # Verify message structure
+      Enum.each(messages, fn msg ->
+        assert Map.has_key?(msg, "role")
+        assert Map.has_key?(msg, "content")
+        assert msg["role"] in ["user", "assistant"]
+        assert is_binary(msg["content"])
+      end)
+
+      # Accumulate all assistant content
+      full_content = messages
+      |> Enum.filter(fn msg -> msg["role"] == "assistant" end)
+      |> Enum.map(fn msg -> msg["content"] end)
+      |> Enum.join("")
+
+      # Assert we got some content from the assistant
+      assert String.length(full_content) > 0
+    end
+  end
+
+  describe "get_messages/2" do
+    test "retrieves messages for a given agent" do
+      # First create an agent
+      {:ok, created_agent} = RelyantApi.Agents.create_agent(
+        @agent_name <> " Messages Test",
+        @agent_description,
+        @model,
+        @tools,
+        user_id: @user_id,
+        email: @email
+      )
+      assert is_list(created_agent)
+      created_agent = List.first(created_agent)
+      agent_id = created_agent["id"]
+
+      # Get messages for the agent (before calling)
+      {:ok, response_before} = RelyantApi.Agents.get_messages(
+        agent_id,
+        user_id: @user_id,
+        email: @email
+      )
+
+      # Assert response structure
+      assert is_map(response_before)
+      assert Map.has_key?(response_before, "total")
+      assert Map.has_key?(response_before, "items")
+      assert is_integer(response_before["total"])
+      assert is_list(response_before["items"])
+      initial_count = response_before["total"]
+
+      created_agent = Map.put(created_agent, "user_prompt", "What is the weather like today?")
+
+      {:ok, _call_response} = RelyantApi.Agents.call_agent_stream(
+        created_agent,
+        user_id: @user_id,
+        email: @email
+      )
+
+      # Get messages again after calling the agent
+      {:ok, response_after} = RelyantApi.Agents.get_messages(
+        agent_id,
+        user_id: @user_id,
+        email: @email
+      )
+
+      # Assert that messages were created
+      assert response_after["total"] > initial_count
+      assert length(response_after["items"]) > length(response_before["items"])
     end
   end
 

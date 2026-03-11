@@ -351,6 +351,287 @@ defmodule RelyantApi.Agents do
     end
   end
 
+  @doc """
+  Calls an agent with a prompt and optional context.
+
+  ## Parameters
+  - agent: Map containing the agent configuration (required). Must include:
+    - id: The agent ID (required)
+    - type: The type of step, should be "agent" (required)
+    - user_prompt: The prompt to send to the agent (optional)
+    - Other agent configuration fields as needed
+  - opts: Keyword list with the following optional options:
+    - user_id: The user ID making the request (optional, for authentication).
+    - email: The email of the user making the request (optional, for authentication).
+    - flow_id: The flow ID to associate with this agent call (optional).
+    - context: List of previous messages for context (optional).
+
+  ## Returns
+  - `{:ok, response}` on success with the agent's response
+  - `{:error, reason}` on failure
+
+  ## Examples
+
+      # Call an agent with a simple prompt
+      agent = %{
+        "id" => "agent-uuid-123",
+        "type" => "agent",
+        "user_prompt" => "What is the weather today?"
+      }
+      RelyantApi.Agents.call_agent(agent, user_id: "user123", email: "test@example.com")
+
+      # Call an agent with context from previous messages
+      context = [
+        %{"role" => "user", "content" => "Hello"},
+        %{"role" => "assistant", "content" => "Hi there!"}
+      ]
+      RelyantApi.Agents.call_agent(agent,
+        user_id: "user123",
+        email: "test@example.com",
+        context: context,
+        flow_id: "flow-uuid-456"
+      )
+  """
+  def call_agent(agent, opts \\ []) do
+    user_id = Keyword.get(opts, :user_id)
+    email = Keyword.get(opts, :email)
+    flow_id = Keyword.get(opts, :flow_id)
+    context = Keyword.get(opts, :context)
+
+    # Get and validate access token
+    with token when is_binary(token) <- RelyantApi.Requests.get_relyant_access_token() do
+
+      url = RelyantApi.Requests.base_api_url() <> "/api/v1/flows/agent-call"
+      headers = [
+        {"Authorization", "Bearer #{token}"},
+        {"Content-Type", "application/json"},
+        {"X-User-ID", user_id},
+        {"X-User-Email", email}
+      ]
+
+      # Build request body
+      data = %{
+        "agent" => agent
+      }
+      |> add_optional_field("flow_id", flow_id)
+      |> add_optional_field("context", context)
+
+      case RelyantApi.Requests.execute_api_request(url, :post, headers, data) do
+        {:ok, response} ->
+          {:ok, response}
+
+        other ->
+          {:error, other}
+      end
+    else
+      nil ->
+        {:error, {:missing_credentials, "RELYANT_API_CLIENT_ID or RELYANT_API_CLIENT_SECRET environment variables are not set"}}
+
+      other ->
+        {:error, {:authentication_failed, other}}
+    end
+  end
+
+
+
+  @doc """
+  Calls an agent with a prompt and optional context using Server-Sent Events (SSE) streaming.
+
+  This function calls the streaming endpoint and returns the raw HTTP response stream.
+  The caller is responsible for parsing the SSE stream, which delivers messages in the format:
+  `data: <json_message>\n\n`
+
+  Each message is a JSON object with fields like:
+  - role: "assistant" or "user"
+  - content: The message content
+
+  ## Parameters
+  - agent: Map containing the agent configuration (required). Must include:
+    - id: The agent ID (required)
+    - type: The type of step, should be "agent" (required)
+    - user_prompt: The prompt to send to the agent (optional)
+    - Other agent configuration fields as needed
+  - opts: Keyword list with the following optional options:
+    - user_id: The user ID making the request (optional, for authentication).
+    - email: The email of the user making the request (optional, for authentication).
+    - flow_id: The flow ID to associate with this agent call (optional).
+    - context: List of previous messages for context (optional).
+
+  ## Returns
+  - `{:ok, response}` on success where response contains the streaming HTTP response
+  - `{:error, reason}` on failure
+
+  ## Handling the Stream
+
+  The response will be a Server-Sent Events (SSE) stream with content-type "text/event-stream".
+  Each event follows this format:
+  ```
+  data: {"role": "assistant", "content": "Hello"}
+
+  data: {"role": "assistant", "content": " world"}
+
+  ```
+
+  To process the stream:
+  1. Read lines from the response body
+  2. Look for lines starting with "data: "
+  3. Parse the JSON following "data: "
+  4. Accumulate or process each message chunk
+
+  ## Examples
+
+      # Call an agent with streaming
+      agent = %{
+        "id" => "agent-uuid-123",
+        "type" => "agent",
+        "user_prompt" => "Tell me a story"
+      }
+      {:ok, response} = RelyantApi.Agents.call_agent_stream(agent, user_id: "user123", email: "test@example.com")
+
+      # Process the stream (example using HTTPoison async)
+      # The actual stream processing depends on your HTTP client
+      # With HTTPoison.get(..., stream_to: self()), you'd receive chunks like:
+      # %HTTPoison.AsyncChunk{chunk: "data: {\\"role\\": \\"assistant\\", \\"content\\": \\"Hello\\"}\n\n"}
+
+      # Example stream processing pseudocode:
+      # response.body
+      # |> String.split("\n\n")
+      # |> Enum.filter(&String.starts_with?(&1, "data: "))
+      # |> Enum.map(fn "data: " <> json -> Jason.decode!(json) end)
+
+      # Call with context
+      context = [
+        %{"role" => "user", "content" => "Hello"},
+        %{"role" => "assistant", "content" => "Hi there!"}
+      ]
+      {:ok, response} = RelyantApi.Agents.call_agent_stream(agent,
+        user_id: "user123",
+        email: "test@example.com",
+        context: context,
+        flow_id: "flow-uuid-456"
+      )
+  """
+  def call_agent_stream(agent, opts \\ []) do
+    user_id = Keyword.get(opts, :user_id)
+    email = Keyword.get(opts, :email)
+    flow_id = Keyword.get(opts, :flow_id)
+    context = Keyword.get(opts, :context)
+
+    # Get and validate access token
+    with token when is_binary(token) <- RelyantApi.Requests.get_relyant_access_token() do
+
+      url = RelyantApi.Requests.base_api_url() <> "/api/v1/flows/agent-call/stream"
+      headers = [
+        {"Authorization", "Bearer #{token}"},
+        {"Content-Type", "application/json"},
+        {"X-User-ID", user_id},
+        {"X-User-Email", email}
+      ]
+
+      # Build request body
+      data = %{
+        "agent" => agent
+      }
+      |> add_optional_field("flow_id", flow_id)
+      |> add_optional_field("context", context)
+
+      case RelyantApi.Requests.execute_api_request(url, :post, headers, data, true) do
+        {:ok, response} ->
+          {:ok, response}
+
+        other ->
+          {:error, other}
+      end
+    else
+      nil ->
+        {:error, {:missing_credentials, "RELYANT_API_CLIENT_ID or RELYANT_API_CLIENT_SECRET environment variables are not set"}}
+
+      other ->
+        {:error, {:authentication_failed, other}}
+    end
+  end
+
+  @doc """
+  Retrieves messages for a given agent or flow.
+
+  ## Parameters
+  - agent_id: The ID of the agent to retrieve messages for (required).
+  - opts: Keyword list with the following optional options:
+    - user_id: The user ID making the request (optional, for authentication).
+    - email: The email of the user making the request (optional, for authentication).
+    - flow_id: The flow ID to filter messages by (optional).
+    - skip: Number of messages to skip (optional, defaults to 0).
+    - limit: Maximum number of messages to retrieve (optional, defaults to 1000).
+
+  ## Returns
+  - `{:ok, %{"total" => total, "items" => messages}}` on success with message list
+  - `{:error, reason}` on failure
+
+  ## Examples
+
+      # Get messages for a specific agent
+      RelyantApi.Agents.get_messages("agent-uuid-123", user_id: "user123", email: "test@example.com")
+
+      # Get messages for an agent in a specific flow
+      RelyantApi.Agents.get_messages("agent-uuid-123",
+        user_id: "user123",
+        email: "test@example.com",
+        flow_id: "flow-uuid-456"
+      )
+
+      # Get messages with pagination
+      RelyantApi.Agents.get_messages("agent-uuid-123",
+        user_id: "user123",
+        skip: 10,
+        limit: 50
+      )
+  """
+  def get_messages(agent_id, opts \\ []) do
+    user_id = Keyword.get(opts, :user_id)
+    email = Keyword.get(opts, :email)
+    flow_id = Keyword.get(opts, :flow_id)
+    skip = Keyword.get(opts, :skip, 0)
+    limit = Keyword.get(opts, :limit, 1000)
+
+    # Get and validate access token
+    with token when is_binary(token) <- RelyantApi.Requests.get_relyant_access_token() do
+
+      # Build filters JSON
+      filters = %{"agent_id" => agent_id}
+      |> add_optional_field("flow_id", flow_id)
+      |> Jason.encode!()
+
+      # Build query parameters
+      query_params = URI.encode_query(%{
+        "skip" => skip,
+        "limit" => limit,
+        "filters" => filters
+      })
+
+      url = RelyantApi.Requests.base_api_url() <> "/api/v1/flows/messages?" <> query_params
+      headers = [
+        {"Authorization", "Bearer #{token}"},
+        {"Content-Type", "application/json"},
+        {"X-User-ID", user_id},
+        {"X-User-Email", email}
+      ]
+
+      case RelyantApi.Requests.execute_api_request(url, :get, headers) do
+        {:ok, response} ->
+          {:ok, response}
+
+        other ->
+          {:error, other}
+      end
+    else
+      nil ->
+        {:error, {:missing_credentials, "RELYANT_API_CLIENT_ID or RELYANT_API_CLIENT_SECRET environment variables are not set"}}
+
+      other ->
+        {:error, {:authentication_failed, other}}
+    end
+  end
+
   # Helper function to add optional fields to the map
   defp add_optional_field(map, _key, nil), do: map
   defp add_optional_field(map, key, value), do: Map.put(map, key, value)

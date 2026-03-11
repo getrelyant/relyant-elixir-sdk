@@ -24,12 +24,13 @@ defmodule RelyantApi.Requests do
   - method: The HTTP method (:get, :post, :put).
   - headers: Optional headers for the request.
   - data: Optional data for POST/PUT requests.
+  - streaming: If true, returns raw body without JSON decoding (for SSE streams). Defaults to false.
 
   ## Returns
-  - {:ok, response} on success
+  - {:ok, response} on success (decoded JSON if streaming=false, raw body if streaming=true)
   - {:error, reason} on failure
   """
-  def execute_api_request(url, method, headers \\ [], data \\ %{}) do
+  def execute_api_request(url, method, headers \\ [], data \\ %{}, streaming \\ false) do
     headers = [{"Content-Type", "application/json"} | headers]
 
     options =
@@ -43,10 +44,18 @@ defmodule RelyantApi.Requests do
 
     case HTTPoison.request(method, url, options, headers, [recv_timeout: 30_000, timeout: 10_000]) do
       {:ok, %HTTPoison.Response{status_code: code, body: body}} when code in 200..299 ->
-        {:ok, Jason.decode!(body)}
+        if streaming do
+          {:ok, body}
+        else
+          {:ok, Jason.decode!(body)}
+        end
 
       {:ok, %HTTPoison.Response{status_code: code, body: body}} ->
-        {:error, {code, Jason.decode!(body)}}
+        if streaming do
+          {:error, {code, body}}
+        else
+          {:error, {code, Jason.decode!(body)}}
+        end
 
       {:error, %HTTPoison.Error{reason: reason}} ->
         {:error, reason}
