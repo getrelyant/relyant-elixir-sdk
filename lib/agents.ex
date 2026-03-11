@@ -100,7 +100,6 @@ defmodule RelyantApi.Agents do
       # Build request body with required and optional fields
       entity = %{
         "name" => name,
-        "slug" => String.downcase(String.replace(name, " ", "-")),
         "agent_type" => "custom",
         "description" => description,
         "model" => model,
