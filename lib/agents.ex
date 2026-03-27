@@ -102,9 +102,9 @@ defmodule RelyantApi.Agents do
         "name" => name,
         "agent_type" => "custom",
         "description" => description,
-        "model" => model,
         "tools" => formatted_tools,
       }
+      |> add_optional_field("model", model)
       |> add_optional_field("params", params)
       |> add_optional_field("user_prompt", user_prompt)
       |> add_optional_field("icon_url", icon_url)
