@@ -523,7 +523,8 @@ defmodule RelyantApi.Agents do
       url = RelyantApi.Requests.base_api_url() <> "/api/v1/flows/agent-call/stream"
       headers = [
         {"Authorization", "Bearer #{token}"},
-        {"Content-Type", "application/json"},
+        {"Content-Type", "application/json;charset=UTF-8"},
+        # {"Accept", "text/event-stream"},
         {"X-User-ID", user_id},
         {"X-User-Email", email}
       ]
