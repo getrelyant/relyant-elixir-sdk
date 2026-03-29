@@ -11,9 +11,9 @@ defmodule RelyantApi.AgentsTest do
 
   @tools [
     %{
+      "name" => "get_employee_data",
+      "description" => "Retrieve the employee data from the company's database",
       "api_call" => %{
-        "name" => "get_employee_data",
-        "description" => "Retrieve the employee data from the company's database",
         "endpoint" => "https://jsonplaceholder.typicode.com/users",
         "method" => "GET",
         "params" => %{},
@@ -21,9 +21,9 @@ defmodule RelyantApi.AgentsTest do
       }
     },
     %{
+      "name" => "get_posts",
+      "description" => "Retrieve posts from the company's database",
       "api_call" => %{
-        "name" => "get_posts",
-        "description" => "Retrieve posts from the company's database",
         "endpoint" => "https://jsonplaceholder.typicode.com/posts",
         "method" => "GET",
         "params" => %{
@@ -78,6 +78,20 @@ defmodule RelyantApi.AgentsTest do
       |> Jason.decode!()
     end)
     |> Enum.filter(fn msg -> msg != %{} end)
+  end
+
+  describe "get_tools/1" do
+    test "retrieves tools for the client" do
+      {:ok, response} = RelyantApi.Agents.get_tools(user_id: @user_id, email: @email)
+
+      # Basic assertions to accept either a list or a paginated map
+      assert response != nil
+
+      case response do
+        list when is_list(list) ->
+          assert is_list(list)
+      end
+    end
   end
 
   describe "create_agent/5" do

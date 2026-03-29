@@ -93,7 +93,9 @@ defmodule RelyantApi.Agents do
       formatted_tools = Enum.map(tools, fn tool ->
         %{
           "type" => "api_call",
-          "api_call" => tool["api_call"]
+          "name" => tool["name"],
+          "description" => tool["description"],
+          "api_call" => tool["api_call"],
         }
       end)
 
@@ -257,7 +259,9 @@ defmodule RelyantApi.Agents do
         Enum.map(tools, fn tool ->
           %{
             "type" => "api_call",
-            "api_call" => tool["api_call"]
+            "name" => tool["name"],
+            "description" => tool["description"],
+            "api_call" => tool["api_call"],
           }
         end)
       else
@@ -610,6 +614,49 @@ defmodule RelyantApi.Agents do
       })
 
       url = RelyantApi.Requests.base_api_url() <> "/api/v1/flows/messages?" <> query_params
+      headers = [
+        {"Authorization", "Bearer #{token}"},
+        {"Content-Type", "application/json"},
+        {"X-User-ID", user_id},
+        {"X-User-Email", email}
+      ]
+
+      case RelyantApi.Requests.execute_api_request(url, :get, headers) do
+        {:ok, response} ->
+          {:ok, response}
+
+        other ->
+          {:error, other}
+      end
+    else
+      nil ->
+        {:error, {:missing_credentials, "RELYANT_API_CLIENT_ID or RELYANT_API_CLIENT_SECRET environment variables are not set"}}
+
+      other ->
+        {:error, {:authentication_failed, other}}
+    end
+  end
+
+
+  @doc """
+  Retrieves available tools for the client.
+
+  ## Parameters
+  - opts: Keyword list with the following optional options:
+    - user_id: The user ID making the request (optional, for authentication).
+    - email: The email of the user making the request (optional, for authentication).
+
+  ## Returns
+  - `{:ok, tools}` on success with the list of tools
+  - `{:error, reason}` on failure
+  """
+  def get_tools(opts \\ []) do
+    user_id = Keyword.get(opts, :user_id)
+    email = Keyword.get(opts, :email)
+
+    with token when is_binary(token) <- RelyantApi.Requests.get_relyant_access_token() do
+
+      url = RelyantApi.Requests.base_api_url() <> "/api/v1/clients/tools"
       headers = [
         {"Authorization", "Bearer #{token}"},
         {"Content-Type", "application/json"},
