@@ -8,6 +8,11 @@ defmodule RelyantApi.AgentsTest do
   @agent_name "Test Agent Elixir"
   @agent_description "A test agent for automated testing"
   @model "gpt-4o-mini"
+  @oauth2_config %{
+    "token_url" => "https://example.com/oauth2/token",
+    "client_id" => "test_client_id",
+    "client_secret" => "test_client_secret"
+  }
 
   @tools [
     %{
@@ -94,13 +99,14 @@ defmodule RelyantApi.AgentsTest do
     end
   end
 
-  describe "create_agent/5" do
+  describe "create_agent/6" do
     test "creates an agent with required parameters" do
       {:ok, response} = RelyantApi.Agents.create_agent(
         @agent_name,
         @agent_description,
         @model,
         @tools,
+        @oauth2_config,
         user_id: @user_id,
         email: @email
       )
@@ -134,6 +140,7 @@ defmodule RelyantApi.AgentsTest do
         @agent_description,
         @model,
         @tools,
+        @oauth2_config,
         user_id: @user_id,
         email: @email
       )
@@ -167,6 +174,7 @@ defmodule RelyantApi.AgentsTest do
         @agent_description,
         @model,
         @tools,
+        @oauth2_config,
         user_id: @user_id,
         email: @email,
         user_prompt: "Tell me a fun fact about space"
@@ -217,6 +225,7 @@ defmodule RelyantApi.AgentsTest do
         @agent_description,
         @model,
         @tools,
+        @oauth2_config,
         user_id: @user_id,
         email: @email
       )
@@ -268,6 +277,7 @@ defmodule RelyantApi.AgentsTest do
         @agent_description,
         @model,
         @tools,
+        @oauth2_config,
         user_id: @user_id,
         email: @email,
         user_prompt: "Initial prompt"

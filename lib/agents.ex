@@ -71,7 +71,7 @@ defmodule RelyantApi.Agents do
         user_prompt: "Retrieve employee data and their posts"
       )
   """
-  def create_agent(name, description, model, tools, opts \\ []) do
+  def create_agent(name, description, model, tools, oauth2_config \\ nil, opts \\ []) do
     user_id = Keyword.get(opts, :user_id)
     email = Keyword.get(opts, :email)
     params = Keyword.get(opts, :params)
@@ -105,6 +105,7 @@ defmodule RelyantApi.Agents do
         "agent_type" => "custom",
         "description" => description,
         "tools" => formatted_tools,
+        "oauth2_config" => oauth2_config
       }
       |> add_optional_field("model", model)
       |> add_optional_field("params", params)
