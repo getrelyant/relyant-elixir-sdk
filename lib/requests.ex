@@ -25,12 +25,15 @@ defmodule RelyantApi.Requests do
   - headers: Optional headers for the request.
   - data: Optional data for POST/PUT requests.
   - streaming: If true, returns raw body without JSON decoding (for SSE streams). Defaults to false.
+  - opts: Optional keyword list with timeout settings:
+    - recv_timeout: Timeout for receiving response (default: 5 minutes for AI operations)
+    - timeout: Timeout for connection (default: 30 seconds)
 
   ## Returns
   - {:ok, response} on success (decoded JSON if streaming=false, raw body if streaming=true)
   - {:error, reason} on failure
   """
-  def execute_api_request(url, method, headers \\ [], data \\ %{}, streaming \\ false) do
+  def execute_api_request(url, method, headers \\ [], data \\ %{}, streaming \\ false, opts \\ []) do
     headers = [{"Content-Type", "application/json"} | headers]
 
     options =
@@ -42,7 +45,13 @@ defmodule RelyantApi.Requests do
         :delete -> Jason.encode!(data)
       end
 
-    case HTTPoison.request(method, url, options, headers, [recv_timeout: 30_000, timeout: 10_000]) do
+    # Default timeouts suitable for AI/LLM operations with document processing
+    # recv_timeout: 5 minutes (300 seconds) - time to receive data from AI processing
+    # timeout: 30 seconds - time to establish connection
+    recv_timeout = Keyword.get(opts, :recv_timeout, 300_000)
+    timeout = Keyword.get(opts, :timeout, 30_000)
+
+    case HTTPoison.request(method, url, options, headers, [recv_timeout: recv_timeout, timeout: timeout]) do
       {:ok, %HTTPoison.Response{status_code: code, body: body}} when code in 200..299 ->
         if streaming do
           {:ok, body}
