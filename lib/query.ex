@@ -8,6 +8,7 @@ defmodule RelyantApi.Query do
   - opts: Keyword list with the following options:
     - user_id: The user ID making the query (optional).
     - email: The email of the user making the query (optional).
+    - map_reduce: Boolean to enable map-reduce strategy for large documents (optional, defaults to false).
     - documents: List of document maps (optional, defaults to []). Each document can contain:
       - id: Document ID
       - uuid: Document UUID
@@ -45,6 +46,7 @@ defmodule RelyantApi.Query do
     user_id = Keyword.get(opts, :user_id)
     email = Keyword.get(opts, :email)
     documents = Keyword.get(opts, :documents, [])
+    map_reduce = Keyword.get(opts, :map_reduce, false)
 
     # Get and validate access token
     with token when is_binary(token) <- RelyantApi.Requests.get_relyant_access_token() do
@@ -58,7 +60,8 @@ defmodule RelyantApi.Query do
       ]
       data = %{
         "documents" => documents,
-        "query" => query
+        "query" => query,
+        "map_reduce" => map_reduce
       }
 
       case RelyantApi.Requests.execute_api_request(url, :post, headers, data) do
