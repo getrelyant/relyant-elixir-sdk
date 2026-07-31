@@ -16,6 +16,11 @@ defmodule RelyantApi.Query do
       - filename: Document filename
       - url: Document URL (content will be fetched from URL)
       - content: Direct document content
+    - tools: List of tool names the model may call while answering (optional, defaults to
+      []). Each name must already be registered on the caller's client. In order to be registered the tool can be
+      stored in the Relyant client table agent_tools column (see the Relyant `GET /api/v1/clients/tools` endpoint).
+      Passing an unregistered name is a no-op. When non-empty, the query is answered via a bounded tool-calling turn instead of
+      being combined with `documents`.
 
   ## Returns
   - `{:ok, response}` on success, where response includes:
@@ -47,6 +52,7 @@ defmodule RelyantApi.Query do
     email = Keyword.get(opts, :email)
     documents = Keyword.get(opts, :documents, [])
     map_reduce = Keyword.get(opts, :map_reduce, false)
+    tools = Keyword.get(opts, :tools, [])
 
     # Get and validate access token
     with token when is_binary(token) <- RelyantApi.Requests.get_relyant_access_token() do
@@ -61,7 +67,8 @@ defmodule RelyantApi.Query do
       data = %{
         "documents" => documents,
         "query" => query,
-        "map_reduce" => map_reduce
+        "map_reduce" => map_reduce,
+        "tools" => tools
       }
 
       case RelyantApi.Requests.execute_api_request(url, :post, headers, data) do
